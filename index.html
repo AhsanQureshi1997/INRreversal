@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAICH Reversal Calculator — UArizona Emergency Medicine</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2128;
+  --border: #30363d;
+  --border2: #21262d;
+  --text: #e6edf3;
+  --text-mid: #8b949e;
+  --text-dim: #484f58;
+  --red: #f85149;
+  --red-bg: #1c0a0a;
+  --red-border: #5a1a1a;
+  --amber: #d29922;
+  --amber-bg: #1a1300;
+  --amber-border: #4a3500;
+  --green: #3fb950;
+  --green-bg: #0a1c0d;
+  --green-border: #1a4a20;
+  --blue: #58a6ff;
+  --blue-bg: #0a1628;
+  --blue-border: #1a3a5a;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --radius: 8px;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.shell {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  border-left: 1px solid var(--border2);
+  border-right: 1px solid var(--border2);
+}
+
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+}
+
+.header-left { display: flex; align-items: center; gap: 14px; }
+
+.header-badge {
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.header-title h1 {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.header-title p {
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-top: 2px;
+}
+
+.header-right {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  text-align: right;
+}
+
+.progress-bar {
+  height: 2px;
+  background: var(--border2);
+  display: flex;
+}
+
+.prog-seg {
+  flex: 1;
+  background: var(--border2);
+  transition: background 0.3s;
+  border-right: 1px solid var(--bg);
+}
+
+.prog-seg.done { background: var(--red); }
+.prog-seg.active { background: var(--amber); }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.body { padding: 24px 28px; }
+
+.section-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.screen-title {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.screen-sub {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.input-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+
+.input-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.num-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--text);
+  width: 160px;
+  transition: border-color 0.15s;
+}
+
+.num-input:focus { outline: none; border-color: var(--blue); }
+
+.num-input::placeholder { color: var(--text-dim); }
+
+.input-unit {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-mid);
+  margin-left: 10px;
+}
+
+.opts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opt-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text-mid);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  position: relative;
+  padding-left: 38px;
+}
+
+.opt-btn::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: all 0.15s;
+}
+
+.opt-btn:hover { border-color: var(--blue); color: var(--text); }
+.opt-btn:hover::before { border-color: var(--blue); }
+
+.opt-btn.sel {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  color: var(--text);
+}
+
+.opt-btn.sel::before {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.opt-tag {
+  float: right;
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 1px;
+}
+
+.tag-pref { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.tag-alt { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.tag-avoid { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+.footer {
+  padding: 18px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  background: var(--surface);
+  position: sticky;
+  bottom: 0;
+}
+
+.btn-main {
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 11px 22px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  transition: opacity 0.15s;
+}
+
+.btn-main:hover { opacity: 0.85; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-ghost:hover { border-color: var(--text-mid); color: var(--text); }
+
+/* Results */
+.timer-block {
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.timer-block.amber { background: var(--amber-bg); border-color: var(--amber-border); }
+.timer-block.green { background: var(--green-bg); border-color: var(--green-border); }
+
+.timer-icon { font-size: 28px; flex-shrink: 0; }
+
+.timer-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+}
+
+.timer-block.red-t .timer-label { color: var(--red); }
+.timer-block.amber .timer-label { color: var(--amber); }
+.timer-block.green .timer-label { color: var(--green); }
+
+.timer-value {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.panel-head {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-head-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+}
+
+.panel-body { padding: 16px; }
+
+.rec-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border2);
+  align-items: flex-start;
+}
+
+.rec-item:last-child { border-bottom: none; }
+
+.rec-marker {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.marker-now { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.marker-urgent { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.marker-monitor { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+.marker-ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+.rec-text {
+  font-size: 14px;
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+
+.rec-text strong { color: var(--text); font-weight: 500; }
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.metric-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+}
+
+.metric-val {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.metric-lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+.note-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copy-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copy-btn:hover { border-color: var(--text-mid); color: var(--text); }
+.copy-btn.copied { color: var(--green); border-color: var(--green-border); }
+
+.cite-line {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.disclaimer {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  padding: 14px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  margin-top: 12px;
+  font-family: var(--mono);
+}
+
+.ua-footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 28px;
+  text-align: center;
+  background: var(--surface);
+}
+
+.ua-footer p {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+@media (max-width: 500px) {
+  .body { padding: 18px 16px; }
+  .footer { padding: 14px 16px; }
+  .header { padding: 16px; }
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .metric-val { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="header-badge">
+        <div class="badge-dot"></div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--red)">CRITICAL</span>
+      </div>
+      <div class="header-title">
+        <h1>WAICH Reversal Calculator</h1>
+        <p>Warfarin-Associated Intracerebral Hemorrhage · ED Decision Support</p>
+      </div>
+    </div>
+    <div class="header-right" id="clock">--:--</div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="prog-seg active" id="ps1"></div>
+    <div class="prog-seg" id="ps2"></div>
+    <div class="prog-seg" id="ps3"></div>
+  </div>
+
+  <!-- Screen 1: Patient data -->
+  <div class="screen active" id="s1">
+    <div class="body">
+      <div class="section-tag">// step_01</div>
+      <div class="screen-title">Patient presentation</div>
+      <p class="screen-sub">Enter current values. Time to reversal is critical — each 30-min delay reduces odds of successful INR reversal by ~20%.</p>
+
+      <div class="input-group">
+        <label class="input-label">Current INR</label>
+        <div class="input-hint">International Normalized Ratio on arrival. Normal therapeutic range: 2.0–3.0.</div>
+        <div style="display:flex;align-items:center">
+          <input class="num-input" type="number" id="inr-val" min="1" max="15" step="0.1" placeholder="e.g. 3.4">
+          <span class="input-unit">INR</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Time since symptom onset</label>
+        <div class="input-hint">Best estimate. Earlier is better — hematoma expansion is most active in the first hours.</div>
+        <div style="display:flex;align-items:center">
+          <input class="num-input" type="number" id="onset-val" min="0" max="72" step="0.5" placeholder="e.g. 2.5">
+          <span class="input-unit">hours</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Glasgow Coma Scale (GCS)</label>
+        <div class="input-hint">Total GCS score. Used for ICH severity stratification.</div>
+        <div style="display:flex;align-items:center">
+          <input class="num-input" type="number" id="gcs-val" min="3" max="15" step="1" placeholder="e.g. 13">
+          <span class="input-unit">/ 15</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">ICH volume estimate (if known)</label>
+        <div class="input-hint">ABC/2 method on CT if available. Enter 0 if unknown.</div>
+        <div style="display:flex;align-items:center">
+          <input class="num-input" type="number" id="vol-val" min="0" max="200" step="1" placeholder="e.g. 15">
+          <span class="input-unit">mL</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="footer">
+      <button class="btn-main" onclick="go(2)">Next → Reversal agent</button>
+    </div>
+  </div>
+
+  <!-- Screen 2: Reversal agent -->
+  <div class="screen" id="s2">
+    <div class="body">
+      <div class="section-tag">// step_02</div>
+      <div class="screen-title">Reversal strategy</div>
+      <p class="screen-sub">Select the agent being administered or under consideration. PCC is now preferred over FFP in most guidelines for faster INR correction.</p>
+
+      <div class="input-group">
+        <label class="input-label">Primary reversal agent</label>
+        <div class="opts-grid" style="margin-top:8px">
+          <button class="opt-btn" onclick="pick(this,'agent','4fpcc')">
+            4-Factor PCC (Kcentra / Beriplex)
+            <span class="opt-tag tag-pref">preferred</span>
+          </button>
+          <button class="opt-btn" onclick="pick(this,'agent','ffp')">
+            Fresh Frozen Plasma (FFP)
+            <span class="opt-tag tag-alt">alternative</span>
+          </button>
+          <button class="opt-btn" onclick="pick(this,'agent','vk_only')">
+            Vitamin K alone
+            <span class="opt-tag tag-avoid">insufficient alone</span>
+          </button>
+          <button class="opt-btn" onclick="pick(this,'agent','unknown')">
+            Not yet decided
+          </button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Vitamin K administered?</label>
+        <div class="opts-grid" style="margin-top:8px">
+          <button class="opt-btn" onclick="pick(this,'vk','yes_given')">Yes — already given IV</button>
+          <button class="opt-btn" onclick="pick(this,'vk','yes_pending')">Yes — ordered, not yet given</button>
+          <button class="opt-btn" onclick="pick(this,'vk','no')">Not yet ordered</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Time since first reversal agent administered</label>
+        <div class="input-hint">Enter 0 if not yet started.</div>
+        <div style="display:flex;align-items:center">
+          <input class="num-input" type="number" id="rev-time" min="0" max="600" step="5" placeholder="e.g. 45">
+          <span class="input-unit">minutes</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="footer">
+      <button class="btn-ghost" onclick="go(1)">Back</button>
+      <button class="btn-main" onclick="go(3)">Calculate →</button>
+    </div>
+  </div>
+
+  <!-- Screen 3: Results -->
+  <div class="screen" id="s3">
+    <div class="body">
+      <div class="section-tag">// results</div>
+      <div class="screen-title">Reversal assessment</div>
+      <p class="screen-sub" style="margin-bottom:16px">Based on Akhter et al. (2018) and current neurocritical care guidelines. For physician use only.</p>
+
+      <div id="urgency-banner"></div>
+
+      <div class="metrics-row" id="metrics-row"></div>
+
+      <div class="result-panel">
+        <div class="panel-head">
+          <span class="panel-head-label">// recommended_actions</span>
+        </div>
+        <div class="panel-body" id="actions-body"></div>
+      </div>
+
+      <div class="result-panel">
+        <div class="panel-head">
+          <span class="panel-head-label">// inr_target_guidance</span>
+        </div>
+        <div class="panel-body" id="inr-body"></div>
+      </div>
+
+      <div class="result-panel">
+        <div class="panel-head">
+          <span class="panel-head-label">// clinical_note</span>
+        </div>
+        <div class="panel-body">
+          <div class="note-block" id="note-block"></div>
+          <div class="copy-row">
+            <button class="copy-btn" id="copy-btn" onclick="copyNote()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              copy_to_clipboard
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+// DISCLAIMER
+// This tool is intended for physician decision support only.
+// It does not replace clinical judgment or institutional protocols.
+// INR reversal goals: target INR ≤ 1.4 within 24h (Akhter et al., 2018).
+// Each 30-min delay in FFP reduces reversal odds by ~20%.
+// Source: Akhter M et al. Intern Emerg Med. 2018;13(4):557-565.
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn-ghost" onclick="resetAll()">New patient</button>
+      <button class="btn-main" onclick="window.print()">Print / save</button>
+    </div>
+  </div>
+
+  <div class="ua-footer">
+    <p>// UA College of Medicine – Phoenix · Department of Emergency Medicine<br>
+    // Based on: Akhter M, Morotti A, et al. Intern Emerg Med. 2018;13(4):557–565.<br>
+    // For licensed physician use only · Not an FDA-cleared device</p>
+  </div>
+
+</div>
+
+<script>
+const A = {};
+
+// Live clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+function go(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s' + n).classList.add('active');
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('ps' + i);
+    el.className = 'prog-seg';
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+  if (n === 3) calcResults();
+  window.scrollTo(0, 0);
+}
+
+function pick(btn, key, val) {
+  A[key] = val;
+  const grp = btn.closest('.opts-grid');
+  grp.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function getVals() {
+  return {
+    inr: parseFloat(document.getElementById('inr-val').value) || 0,
+    onset: parseFloat(document.getElementById('onset-val').value) || 0,
+    gcs: parseInt(document.getElementById('gcs-val').value) || 15,
+    vol: parseFloat(document.getElementById('vol-val').value) || 0,
+    agent: A['agent'] || 'unknown',
+    vk: A['vk'] || 'no',
+    revTime: parseInt(document.getElementById('rev-time').value) || 0
+  };
+}
+
+function calcResults() {
+  const v = getVals();
+  const now = new Date().toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
+
+  // Urgency level
+  let urgLevel = 'green';
+  if (v.inr >= 3 || v.gcs <= 12 || v.vol >= 30) urgLevel = 'red';
+  else if (v.inr >= 2 || v.gcs <= 14 || v.onset <= 6) urgLevel = 'amber';
+
+  // ICH score components (simplified)
+  const ichGCS = v.gcs <= 4 ? 2 : v.gcs <= 12 ? 1 : 0;
+  const ichVol = v.vol >= 30 ? 1 : 0;
+  const ichScore = ichGCS + ichVol;
+  const mortality = ichScore >= 3 ? '>70%' : ichScore === 2 ? '~26%' : ichScore === 1 ? '~13%' : '~0%';
+
+  // Time window assessment
+  const windowLabel = v.onset <= 3 ? 'Optimal window' : v.onset <= 6 ? 'Active window' : v.onset <= 24 ? 'Extended window' : 'Late presentation';
+  const windowColor = v.onset <= 3 ? 'green' : v.onset <= 6 ? 'amber' : 'red';
+
+  // Banner
+  const bannerData = {
+    red: { cls:'red-t', icon:'🚨', label:'URGENT REVERSAL', title:`INR ${v.inr} — Immediate action required` },
+    amber: { cls:'amber', icon:'⚡', label:'EXPEDITE REVERSAL', title:`INR ${v.inr} — Act within 30 minutes` },
+    green: { cls:'green', icon:'✓', label:'REVERSAL INDICATED', title:`INR ${v.inr} — Follow protocol below` }
+  };
+
+  const b = bannerData[urgLevel];
+  document.getElementById('urgency-banner').innerHTML = `
+    <div class="timer-block ${b.cls}" style="margin-bottom:16px">
+      <div class="timer-icon">${b.icon}</div>
+      <div>
+        <div class="timer-label">${b.label}</div>
+        <div class="timer-value">${b.title}</div>
+      </div>
+    </div>`;
+
+  // Metrics
+  document.getElementById('metrics-row').innerHTML = `
+    <div class="metric-box">
+      <div class="metric-val" style="color:${v.inr >= 3 ? 'var(--red)' : v.inr >= 2 ? 'var(--amber)' : 'var(--green)'}">${v.inr || '—'}</div>
+      <div class="metric-lbl">Current INR</div>
+    </div>
+    <div class="metric-box">
+      <div class="metric-val" style="color:${windowColor === 'green' ? 'var(--green)' : windowColor === 'amber' ? 'var(--amber)' : 'var(--red)'}">${v.onset}h</div>
+      <div class="metric-lbl">${windowLabel}</div>
+    </div>
+    <div class="metric-box">
+      <div class="metric-val">${v.gcs || '—'}</div>
+      <div class="metric-lbl">GCS Score</div>
+    </div>`;
+
+  // Actions
+  const agentNames = { '4fpcc':'4-Factor PCC', 'ffp':'FFP', 'vk_only':'Vitamin K', 'unknown':'Not yet selected' };
+  const actions = [];
+
+  if (v.agent === 'unknown' || v.agent === 'vk_only') {
+    actions.push({ marker:'marker-now', text:'<strong>Select reversal agent immediately.</strong> 4-Factor PCC is preferred — achieves INR correction within ~30 min vs. hours for FFP.' });
+  }
+
+  if (v.agent === 'ffp') {
+    actions.push({ marker:'marker-urgent', text:'<strong>FFP is running.</strong> Each additional 30-min delay reduces odds of successful INR reversal by ~20% (Akhter et al., 2018). Ensure adequate volume ordered — typical dose 10–15 mL/kg.' });
+    actions.push({ marker:'marker-monitor', text:'Consider <strong>escalating to 4-Factor PCC</strong> if available — 54–63% of PCC patients achieve INR ≤1.3 within 1 hour vs. 0% with FFP alone.' });
+  }
+
+  if (v.agent === '4fpcc') {
+    actions.push({ marker:'marker-ok', text:`<strong>4-Factor PCC initiated.</strong> Expected INR correction within 30–60 minutes. ${v.revTime > 0 ? `Time since administration: ${v.revTime} min.` : 'Document time of first dose.'} ` });
+  }
+
+  if (v.vk === 'no') {
+    actions.push({ marker:'marker-now', text:'<strong>Order IV Vitamin K 10mg now.</strong> Required alongside PCC or FFP — ensures sustained reversal. Begins working within 6h, full effect at 24h.' });
+  } else if (v.vk === 'yes_pending') {
+    actions.push({ marker:'marker-urgent', text:'<strong>Vitamin K ordered — confirm administration.</strong> Must be given IV (not SC) for reliable absorption in emergencies.' });
+  }
+
+  actions.push({ marker:'marker-monitor', text:`<strong>Target INR ≤1.4 within 24h</strong> (Akhter et al., 2018 primary endpoint). Recheck INR 30–60 min after PCC or 4–6h after FFP completion.` });
+
+  if (v.vol > 0 && v.vol >= 30) {
+    actions.push({ marker:'marker-urgent', text:`<strong>Large hematoma volume (${v.vol} mL) — neurosurgery consult indicated.</strong> Surgical evacuation thresholds vary by location and clinical status.` });
+  }
+
+  document.getElementById('actions-body').innerHTML = actions.map(a =>
+    `<div class="rec-item"><span class="rec-marker ${a.marker}">${a.marker.includes('now') ? 'NOW' : a.marker.includes('urgent') ? 'URGENT' : a.marker.includes('monitor') ? 'MONITOR' : 'OK'}</span><div class="rec-text">${a.text}</div></div>`
+  ).join('');
+
+  // INR guidance
+  document.getElementById('inr-body').innerHTML = `
+    <div class="rec-item"><span class="rec-marker marker-now">TARGET</span><div class="rec-text"><strong>INR ≤1.4 within 24 hours</strong> — primary reversal goal (Akhter et al., 2018).</div></div>
+    <div class="rec-item"><span class="rec-marker marker-urgent">RECHECK</span><div class="rec-text">PCC: recheck INR at <strong>30–60 min</strong> post-infusion. FFP: recheck at <strong>4–6 hours</strong> after completion.</div></div>
+    <div class="rec-item"><span class="rec-marker marker-monitor">IF ELEVATED</span><div class="rec-text">If INR remains ≥1.4 at 24–48h after initial PCC, additional dosing may be considered — but carries increased thrombotic risk.</div></div>
+    <div class="rec-item"><span class="rec-marker marker-ok">NOTE</span><div class="rec-text">Successful INR reversal (≤1.4) in Akhter et al. cohort correlated with <strong>shorter time to FFP initiation</strong> — median 90 min for success vs. 210 min for failure (p=0.02).</div></div>`;
+
+  // Note
+  const noteText = `WAICH REVERSAL CALCULATOR — ${now}
+${'='.repeat(50)}
+PATIENT DATA
+  Current INR:        ${v.inr || 'not entered'}
+  Onset (hours):      ${v.onset || 'not entered'}
+  GCS:                ${v.gcs || 'not entered'} / 15
+  ICH Volume:         ${v.vol || 'not entered'} mL
+  Urgency Level:      ${urgLevel.toUpperCase()}
+
+REVERSAL PLAN
+  Agent:              ${agentNames[v.agent]}
+  Vitamin K:          ${v.vk === 'yes_given' ? 'Given IV' : v.vk === 'yes_pending' ? 'Ordered pending' : 'Not yet ordered'}
+  Time since admin:   ${v.revTime} min
+
+TARGETS
+  INR goal:           ≤ 1.4 within 24h
+  Recheck timing:     ${v.agent === '4fpcc' ? '30-60 min post-PCC' : '4-6h post-FFP'}
+
+REFERENCE
+  Akhter M, Morotti A, et al.
+  Timing of INR reversal using fresh-frozen plasma
+  in warfarin-associated intracerebral hemorrhage.
+  Intern Emerg Med. 2018;13(4):557-565.
+${'='.repeat(50)}
+FOR PHYSICIAN USE ONLY`;
+
+  document.getElementById('note-block').textContent = noteText;
+  document.getElementById('note-block').dataset.note = noteText;
+}
+
+function copyNote() {
+  const text = document.getElementById('note-block').dataset.note;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> copy_to_clipboard';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function resetAll() {
+  Object.keys(A).forEach(k => delete A[k]);
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('sel'));
+  ['inr-val','onset-val','gcs-val','vol-val','rev-time'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  go(1);
+}
+</script>
+</body>
+</html>
